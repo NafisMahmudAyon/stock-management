@@ -1,34 +1,55 @@
-import { v4 as uuidv4 } from "uuid"; // Import uuid for generating unique keys
-import { supabase } from "@/components/createClient";
+import { NextResponse } from 'next/server';
+import { supabase } from '@/components/createClient'; // Adjust path as needed
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request) {
-	const { username, email, password } = await request.json();
+    const { firstName, lastName, userName, email, password } = await request.json();
 
-	if (!username || !email || !password) {
-		return new Response(JSON.stringify({ error: "All fields are required" }), {
-			status: 400,
-		});
-	}
+    if (!firstName || !lastName || !userName || !email || !password) {
+        return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
+    }
 
-	try {
-		// Generate a unique API key
-		const apiKey = uuidv4();
+    try {
+        // Check if the email already exists
+        const { data: existingUsers, error: fetchError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email);
 
-		// Hash the password (assuming you handle password hashing elsewhere)
-		const { data: user, error: insertError } = await supabase
-			.from("users")
-			.insert([{ username, email, password_hash: password, api_key: apiKey }]);
+        if (fetchError) {
+            throw fetchError;
+        }
 
-		if (insertError) {
-			return new Response(JSON.stringify({ error: insertError.message }), {
-				status: 500,
-			});
-		}
+        if (existingUsers.length > 0) {
+            return NextResponse.json({ error: 'Email is already registered.' }, { status: 400 });
+        }
 
-		return new Response(JSON.stringify({ user, apiKey }), { status: 201 });
-	} catch (error) {
-		return new Response(JSON.stringify({ error: "Internal Server Error" }), {
-			status: 500,
-		});
-	}
+        // Hash the password
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        // Generate a unique API key
+        const apiKey = uuidv4();
+
+        // Insert user into Supabase
+        const { error: insertError } = await supabase.from('users').insert([
+            {
+                first_name: firstName,
+                last_name: lastName,
+                user_name: userName,
+                email,
+                password: passwordHash,
+                api: apiKey, // Save the API key in the 'api' field
+            },
+        ]);
+
+        if (insertError) {
+            throw insertError;
+        }
+
+        return NextResponse.json({ message: 'Sign up successful!', apiKey });
+    } catch (err) {
+        console.error('Error signing up:', err);
+        return NextResponse.json({ error: 'Failed to sign up. Please try again.' }, { status: 500 });
+    }
 }

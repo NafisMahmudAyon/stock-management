@@ -1,7 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import bcrypt from "bcryptjs";
-import { supabase } from "./createClient";
 
 const SignUpForm = ({ onSignUpSuccess }) => {
 	const [firstName, setFirstName] = useState("");
@@ -10,6 +8,7 @@ const SignUpForm = ({ onSignUpSuccess }) => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
 
 	const handleSignUp = async (e) => {
 		e.preventDefault();
@@ -20,42 +19,31 @@ const SignUpForm = ({ onSignUpSuccess }) => {
 		}
 
 		try {
-			// Check if the email already exists
-			const { data: existingUsers, error: fetchError } = await supabase
-				.from("users")
-				.select("id")
-				.eq("email", email);
-
-			if (fetchError) {
-				throw fetchError;
-			}
-
-			if (existingUsers.length > 0) {
-				setError("Email is already registered.");
-				return;
-			}
-
-			// Hash the password
-			const passwordHash = await bcrypt.hash(password, 10);
-
-			// Insert user into Supabase
-			const { data, error: insertError } = await supabase.from("users").insert([
-				{
-					first_name: firstName,
-					last_name: lastName,
-					user_name: userName,
-					email,
-					password: passwordHash,
+			const response = await fetch("/api/signup", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
 				},
-			]);
+				body: JSON.stringify({
+					firstName,
+					lastName,
+					userName,
+					email,
+					password,
+				}),
+			});
 
-			if (insertError) {
-				throw insertError;
-			}
+			const result = await response.json();
 
-			// Handle successful sign-up
-			if (onSignUpSuccess) {
-				onSignUpSuccess();
+			if (response.ok) {
+				setSuccessMessage(
+					`Sign up successful! Your API key is: ${result.apiKey}`
+				);
+				if (onSignUpSuccess) {
+					onSignUpSuccess();
+				}
+			} else {
+				setError(result.error || "Failed to sign up. Please try again.");
 			}
 		} catch (err) {
 			console.error("Error signing up:", err);
@@ -67,6 +55,7 @@ const SignUpForm = ({ onSignUpSuccess }) => {
 		<form onSubmit={handleSignUp}>
 			<h2>Sign Up</h2>
 			{error && <p style={{ color: "red" }}>{error}</p>}
+			{successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
 			<input
 				type="text"
 				placeholder="First Name"

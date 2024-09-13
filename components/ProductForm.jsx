@@ -2,10 +2,17 @@
 import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill"; // Import React Quill
 import "react-quill/dist/quill.snow.css"; // Import Quill styles
+import Select from "react-select";
+import axios from "axios";
+import { supabase } from "./createClient";
 
-const ProductForm = ({ onSubmit }) => {
+const cloudinaryUploadUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
+const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
+
+const ProductForm = ({ user }) => {
+	console.log(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
 	const [product, setProduct] = useState({
-		id: 0,
+		user_id: user.userId,
 		name: "",
 		slug: "",
 		type: "single",
@@ -22,19 +29,20 @@ const ProductForm = ({ onSubmit }) => {
 		stock_status: "instock",
 		stock_quantity: 0,
 		categories: [],
-		tags: [],
-		images: [],
-		attributes: [],
-		variations: [],
-		reviews_allowed: false,
+		// images: [],
+		// attributes: [],
+		// variations: [],
+		// reviews_allowed: false,
 		average_rating: "0",
 		rating_count: 0,
 	});
 
 	console.log(product);
 
+	const [images, setImages] = useState([]);
 	const [attributes, setAttributes] = useState([]);
 	const [variations, setVariations] = useState([]);
+	const [categories, setCategories] = useState([]);
 	const [isSlugEdited, setIsSlugEdited] = useState(false);
 
 	// Auto-generate slug from product name
@@ -47,6 +55,28 @@ const ProductForm = ({ onSubmit }) => {
 			setProduct((prev) => ({ ...prev, slug: slugifiedName }));
 		}
 	}, [product.name, isSlugEdited]);
+
+	useEffect(() => {
+		const fetchCategories = async () => {
+			try {
+				const response = await fetch("/api/categories");
+				const data = await response.json();
+				if (data.error) {
+					console.error("Error fetching categories:", data.error);
+				} else {
+					setCategories(
+						data.map((cat) => ({
+							value: cat.id,
+							label: cat.name,
+						}))
+					);
+				}
+			} catch (error) {
+				console.error("Error fetching categories:", error);
+			}
+		};
+		fetchCategories();
+	}, []);
 
 	// Handle input change for string, number, and select fields
 	const handleChange = (e) => {
@@ -86,15 +116,36 @@ const ProductForm = ({ onSubmit }) => {
 		}));
 	};
 
+	// Handle category change
+	const handleCategoryChange = (selectedOptions) => {
+		setProduct((prev) => ({
+			...prev,
+			categories: selectedOptions.map((option) => option.value),
+		}));
+	};
+
 	// Handle adding a new attribute
 	const addAttribute = () => {
 		setAttributes([...attributes, { id: Date.now(), name: "", options: [] }]);
+	};
+
+	// Handle deleting an attribute
+	const deleteAttribute = (index) => {
+		const newAttributes = attributes.filter((_, i) => i !== index);
+		setAttributes(newAttributes);
 	};
 
 	// Handle adding a new option to an attribute
 	const addAttributeOption = (attrIndex) => {
 		const newAttributes = [...attributes];
 		newAttributes[attrIndex].options.push("");
+		setAttributes(newAttributes);
+	};
+
+	// Handle deleting an option from an attribute
+	const deleteAttributeOption = (attrIndex, optIndex) => {
+		const newAttributes = [...attributes];
+		newAttributes[attrIndex].options.splice(optIndex, 1);
 		setAttributes(newAttributes);
 	};
 
@@ -168,10 +219,162 @@ const ProductForm = ({ onSubmit }) => {
 		setVariations(newVariations);
 	};
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		onSubmit({ ...product, attributes, variations });
+	// Handle image upload
+	const handleImageUpload = async (event) => {
+		const files = event.target.files;
+		const uploadedImages = [];
+
+		for (const file of files) {
+			const formData = new FormData();
+			formData.append("file", file);
+			formData.append("upload_preset", uploadPreset);
+
+			try {
+				const response = await axios.post(cloudinaryUploadUrl, formData);
+				const imageUrl = response.data.secure_url;
+				uploadedImages.push(imageUrl);
+			} catch (error) {
+				console.error("Error uploading image:", error);
+			}
+		}
+
+		setProduct((prev) => ({
+			...prev,
+			images: [...prev.images, ...uploadedImages],
+		}));
 	};
+
+	// Handle image delete
+	const handleImageDelete = (index) => {
+		const newImages = product.images.filter((_, i) => i !== index);
+		setProduct((prev) => ({
+			...prev,
+			images: newImages,
+		}));
+	};
+
+	// const handleSubmit = async (e) => {
+	// 	e.preventDefault();
+	// 	// onSubmit({ ...product, attributes, variations });
+	// 	// const productData = {
+	// 	// 	...product,
+	// 	// 	attributes: attributes.map((attr) => ({
+	// 	// 		name: attr.name,
+	// 	// 		options: attr.options.filter((opt) => opt), // Remove empty options
+	// 	// 	})),
+	// 	// 	variations: variations.map((variation) => ({
+	// 	// 		...variation,
+	// 	// 		attributes: variation.attributes.filter((attr) => attr.option !== ""), // Only include selected attributes
+	// 	// 	})),
+	// 	// };
+	// 	let { data, error } = await supabase
+	// 		.from("users")
+	// 		.select("api")
+	// 		.eq("email", user.email)
+	// 		.single();
+
+	// 	console.log(data);
+	// 	try {
+	// 		// Make an API call to save the product
+	// 		const responseProduct = await axios.post("/api/products", product, {
+	// 			headers: {
+	// 				Authorization: `Bearer ${data.api}`, // Attach the API key as a Bearer token
+	// 				"Content-Type": "application/json",
+	// 			},
+	// 		});
+  //     if (responseProduct.status === 200) {
+  //       var id = responseProduct.data[0].id
+  //       console.log(variations)
+  //       for (var i = 0; i < variations.length; i++) {
+  //       const id = responseProduct.data[0].id
+  //       const responseVariation = await axios.post(`/api/products/${id}/variations`, {id, variations[i]}, {
+  //       headers: {
+	// 				Authorization: `Bearer ${data.api}`, // Attach the API key as a Bearer token
+	// 				"Content-Type": "application/json",
+	// 			},
+	// 		})};
+  //     if (responseVariation.status === 200) {
+	// 			console.log("Product saved successfully", responseVariation.data);
+	// 			// Optionally, reset the form or navigate to another page
+	// 		} else {
+	// 			console.error("Error saving product", responseVariation.data);
+	// 		}
+  //   }
+
+	// 		// if (responseProduct.status === 200) {
+	// 		// 	console.log("Product saved successfully", responseProduct.data);
+	// 		// 	// Optionally, reset the form or navigate to another page
+	// 		// } else {
+	// 		// 	console.error("Error saving product", responseProduct.data);
+	// 		// }
+	// 	} catch (error) {
+	// 		console.error("Error submitting form:", error);
+	// 	}
+	// };
+
+  const handleSubmit = async (e) => {
+		e.preventDefault();
+
+		try {
+			// Get the API key from the user's Supabase data
+			let { data: userData, error: userError } = await supabase
+				.from("users")
+				.select("api")
+				.eq("email", user.email)
+				.single();
+
+			if (userError || !userData) {
+				throw new Error("Error retrieving API key");
+			}
+
+			const apiKey = userData.api;
+
+			// Make an API call to save the product
+			const responseProduct = await axios.post("/api/products", product, {
+				headers: {
+					Authorization: `Bearer ${apiKey}`, // Attach the API key as a Bearer token
+					"Content-Type": "application/json",
+				},
+			});
+
+			// Check if the product was successfully saved
+			if (responseProduct.status === 200 && responseProduct.data.length > 0) {
+				const productId = responseProduct.data[0].id; // Get the product ID from the response
+				console.log("Product saved successfully", responseProduct.data);
+
+				// Loop through the variations and send them to the API
+				for (let i = 0; i < variations.length; i++) {
+					let variation = { ...variations[i], product_id: productId }; // Add the product ID to the variation
+          console.log(variation)
+
+					// Post each variation linked to the product ID
+					const responseVariation = await axios.post(
+						`/api/products/${productId}/variations`,
+						variation, // Send the variation with the product ID
+						{
+							headers: {
+								Authorization: `Bearer ${apiKey}`, // Attach the API key again
+								"Content-Type": "application/json",
+							},
+						}
+					);
+
+					// Check if the variation was successfully saved
+					if (responseVariation.status === 200) {
+						console.log("Variation saved successfully", responseVariation.data);
+					} else {
+						console.error("Error saving variation", responseVariation.data);
+					}
+				}
+			} else {
+				console.error("Error saving product", responseProduct.data);
+			}
+		} catch (error) {
+			console.error("Error submitting form:", error);
+		}
+	};
+
+
 
 	return (
 		<form onSubmit={handleSubmit} className="p-6">
@@ -279,7 +482,7 @@ const ProductForm = ({ onSubmit }) => {
 				className="p-2 border border-gray-300 rounded w-full mb-4"
 			/>
 
-			<input
+			{/* <input
 				type="text"
 				name="categories"
 				value={product.categories.join(", ")}
@@ -291,164 +494,247 @@ const ProductForm = ({ onSubmit }) => {
 				}
 				placeholder="Categories (comma-separated)"
 				className="p-2 border border-gray-300 rounded w-full mb-4"
+			/> */}
+
+			<label className="block mb-2">Categories</label>
+			<Select
+				isMulti
+				options={categories}
+				value={categories.filter((category) =>
+					product.categories.includes(category.value)
+				)}
+				onChange={handleCategoryChange}
+				className="mb-4"
 			/>
 
+			{/* Image upload */}
+			<h2 className="text-lg font-semibold mb-2">Images</h2>
 			<input
-				type="text"
-				name="tags"
-				value={product.tags.join(", ")}
-				onChange={(e) =>
-					setProduct({
-						...product,
-						tags: e.target.value.split(",").map((tag) => tag.trim()),
-					})
-				}
-				placeholder="Tags (comma-separated)"
-				className="p-2 border border-gray-300 rounded w-full mb-4"
+				type="file"
+				accept="image/*"
+				onChange={handleImageUpload}
+				multiple
+				className="mb-4"
 			/>
-
-			<h2 className="text-lg font-semibold mb-2">Attributes</h2>
-			{attributes.map((attr, index) => (
-				<div key={attr.id} className="mb-4">
-					<input
-						type="text"
-						value={attr.name}
-						onChange={(e) =>
-							handleAttributeChange(index, "name", e.target.value)
-						}
-						placeholder="Attribute Name"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					{attr.options.map((opt, optIndex) => (
-						<input
-							key={optIndex}
-							type="text"
-							value={opt}
-							onChange={(e) =>
-								handleOptionChange(index, optIndex, e.target.value)
-							}
-							placeholder="Option"
-							className="p-2 border border-gray-300 rounded w-full mb-2"
+			<div className="grid grid-cols-2 gap-4 mb-4">
+				{images.map((imageUrl, index) => (
+					<div key={index} className="relative">
+						<img
+							src={imageUrl}
+							alt={`Product Image ${index + 1}`}
+							className="w-full h-auto border border-gray-300 rounded"
 						/>
-					))}
-					<button
-						type="button"
-						onClick={() => addAttributeOption(index)}
-						className="text-blue-500">
-						Add Option
-					</button>
-				</div>
-			))}
-			<button
-				type="button"
-				onClick={addAttribute}
-				className="text-blue-500 mb-4">
-				Add Attribute
-			</button>
+						<button
+							type="button"
+							onClick={() => handleImageDelete(index)}
+							className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded">
+							Delete
+						</button>
+					</div>
+				))}
+			</div>
 
-			<h2 className="text-lg font-semibold mb-2">Variations</h2>
-			{variations.map((variation, index) => (
-				<div key={index} className="mb-4">
-					<input
-						type="text"
-						value={variation.sku}
-						onChange={(e) =>
-							handleVariationChange(index, "sku", e.target.value)
-						}
-						placeholder="SKU"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					<input
-						type="number"
-						value={variation.price}
-						onChange={(e) =>
-							handleVariationChange(index, "price", e.target.value)
-						}
-						placeholder="Price"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					<input
-						type="number"
-						value={variation.sale_price}
-						onChange={(e) =>
-							handleVariationChange(index, "sale_price", e.target.value)
-						}
-						placeholder="Sale Price"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					<input
-						type="date"
-						value={variation.sale_price_start_date.toISOString().split("T")[0]}
-						onChange={(e) =>
-							handleVariationChange(
-								index,
-								"sale_price_start_date",
-								new Date(e.target.value)
-							)
-						}
-						placeholder="Sale Price Start Date"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					<input
-						type="date"
-						value={variation.sale_price_end_date.toISOString().split("T")[0]}
-						onChange={(e) =>
-							handleVariationChange(
-								index,
-								"sale_price_end_date",
-								new Date(e.target.value)
-							)
-						}
-						placeholder="Sale Price End Date"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					<input
-						type="number"
-						value={variation.stock_quantity}
-						onChange={(e) =>
-							handleVariationChange(index, "stock_quantity", e.target.value)
-						}
-						placeholder="Stock Quantity"
-						className="p-2 border border-gray-300 rounded w-full mb-2"
-					/>
-					{variation.attributes.map((attr, attrIndex) => (
-						<select
-							key={attr.name}
-							value={attr.option}
-							onChange={(e) =>
-								handleVariationAttributeChange(index, attrIndex, e.target.value)
-							}
-							className="p-2 border border-gray-300 rounded w-full mb-2">
-							<option value="">Select {attr.name}</option>
-							{attributes
-								.find((a) => a.name === attr.name)
-								?.options.map((option, optIndex) => (
-									<option key={optIndex} value={option}>
-										{option}
-									</option>
-								))}
-						</select>
+			{product.type == "variable" && (
+				<>
+					<h2 className="text-lg font-semibold mb-2">Attributes</h2>
+					{/* {attributes.map((attr, index) => (
+						<div key={attr.id} className="mb-4">
+							<input
+								type="text"
+								value={attr.name}
+								onChange={(e) =>
+									handleAttributeChange(index, "name", e.target.value)
+								}
+								placeholder="Attribute Name"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							{attr.options.map((opt, optIndex) => (
+								<input
+									key={optIndex}
+									type="text"
+									value={opt}
+									onChange={(e) =>
+										handleOptionChange(index, optIndex, e.target.value)
+									}
+									placeholder="Option"
+									className="p-2 border border-gray-300 rounded w-full mb-2"
+								/>
+							))}
+							<button
+								type="button"
+								onClick={() => addAttributeOption(index)}
+								className="text-blue-500">
+								Add Option
+							</button>
+						</div>
+					))} */}
+					{attributes.map((attribute, attrIndex) => (
+						<div
+							key={attribute.id}
+							className="mb-4 p-4 border border-gray-300 rounded">
+							<input
+								type="text"
+								value={attribute.name}
+								onChange={(e) =>
+									handleAttributeChange(attrIndex, "name", e.target.value)
+								}
+								placeholder="Attribute Name"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							<button
+								type="button"
+								onClick={() => deleteAttribute(attrIndex)}
+								className="bg-red-500 text-white px-4 py-2 rounded mb-2">
+								Delete Attribute
+							</button>
+							<h3 className="font-semibold mb-2">Options</h3>
+							<button
+								type="button"
+								onClick={() => addAttributeOption(attrIndex)}
+								className="bg-blue-500 text-white px-4 py-2 rounded mb-2">
+								Add Option
+							</button>
+							{attribute.options.map((option, optIndex) => (
+								<div key={optIndex} className="mb-2">
+									<input
+										type="text"
+										value={option}
+										onChange={(e) =>
+											handleOptionChange(attrIndex, optIndex, e.target.value)
+										}
+										placeholder="Option"
+										className="p-2 border border-gray-300 rounded w-full mb-2"
+									/>
+									<button
+										type="button"
+										onClick={() => deleteAttributeOption(attrIndex, optIndex)}
+										className="bg-red-500 text-white px-4 py-2 rounded">
+										Delete Option
+									</button>
+								</div>
+							))}
+						</div>
 					))}
 					<button
 						type="button"
-						onClick={() => handleVariationDelete(index)}
-						className="text-red-500">
-						Delete Variation
+						onClick={addAttribute}
+						className="text-blue-500 mb-4">
+						Add Attribute
 					</button>
-				</div>
-			))}
-			<button
-				type="button"
-				onClick={addManualVariation}
-				className="text-blue-500 mb-4">
-				Add Manual Variation
-			</button>
-			<button
-				type="button"
-				onClick={autoGenerateVariations}
-				className="text-blue-500 mb-4">
-				Auto Generate Variations
-			</button>
+
+					<h2 className="text-lg font-semibold mb-2">Variations</h2>
+					{variations.map((variation, index) => (
+						<div key={index} className="mb-4">
+							<input
+								type="text"
+								value={variation.sku}
+								onChange={(e) =>
+									handleVariationChange(index, "sku", e.target.value)
+								}
+								placeholder="SKU"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							<input
+								type="number"
+								value={variation.price}
+								onChange={(e) =>
+									handleVariationChange(index, "price", e.target.value)
+								}
+								placeholder="Price"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							<input
+								type="number"
+								value={variation.sale_price}
+								onChange={(e) =>
+									handleVariationChange(index, "sale_price", e.target.value)
+								}
+								placeholder="Sale Price"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							<input
+								type="date"
+								value={
+									variation.sale_price_start_date.toISOString().split("T")[0]
+								}
+								onChange={(e) =>
+									handleVariationChange(
+										index,
+										"sale_price_start_date",
+										new Date(e.target.value)
+									)
+								}
+								placeholder="Sale Price Start Date"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							<input
+								type="date"
+								value={
+									variation.sale_price_end_date.toISOString().split("T")[0]
+								}
+								onChange={(e) =>
+									handleVariationChange(
+										index,
+										"sale_price_end_date",
+										new Date(e.target.value)
+									)
+								}
+								placeholder="Sale Price End Date"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							<input
+								type="number"
+								value={variation.stock_quantity}
+								onChange={(e) =>
+									handleVariationChange(index, "stock_quantity", e.target.value)
+								}
+								placeholder="Stock Quantity"
+								className="p-2 border border-gray-300 rounded w-full mb-2"
+							/>
+							{variation.attributes.map((attr, attrIndex) => (
+								<select
+									key={attr.name}
+									value={attr.option}
+									onChange={(e) =>
+										handleVariationAttributeChange(
+											index,
+											attrIndex,
+											e.target.value
+										)
+									}
+									className="p-2 border border-gray-300 rounded w-full mb-2">
+									<option value="">Select {attr.name}</option>
+									{attributes
+										.find((a) => a.name === attr.name)
+										?.options.map((option, optIndex) => (
+											<option key={optIndex} value={option}>
+												{option}
+											</option>
+										))}
+								</select>
+							))}
+							<button
+								type="button"
+								onClick={() => handleVariationDelete(index)}
+								className="text-red-500">
+								Delete Variation
+							</button>
+						</div>
+					))}
+					<button
+						type="button"
+						onClick={addManualVariation}
+						className="text-blue-500 mb-4">
+						Add Manual Variation
+					</button>
+					<button
+						type="button"
+						onClick={autoGenerateVariations}
+						className="text-blue-500 mb-4">
+						Auto Generate Variations
+					</button>
+				</>
+			)}
 
 			<button type="submit" className="p-2 bg-blue-500 text-white rounded">
 				Submit

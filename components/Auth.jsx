@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import SignUpForm from "./SignUp";
 import SignInForm from "./SignIn";
+import ProductForm from "./ProductForm";
 
 const Auth = () => {
 	const [isSignedUp, setIsSignedUp] = useState(false);
@@ -53,6 +54,7 @@ const Auth = () => {
 			<div>
 				<h2>Welcome, {userEmail}!</h2>
 				<button onClick={handleSignOut}>Sign Out</button>
+				<ProductForm user={userData} />
 			</div>
 		);
 	}
