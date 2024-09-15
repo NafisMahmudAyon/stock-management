@@ -8,10 +8,10 @@ export async function POST(request, { params }) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const productId = params.id;
     const variation = await request.json();
-    const { data, error } = await supabase.from('product_variations').insert([{ product_id: productId, ...variation }]);
-    if (error) return NextResponse.json({ error: 'Failed to add variation' }, { status: 500 });
+    console.log(variation);
+    const { data, error } = await supabase.from('product_variations').insert([variation]);
+    if (error){ console.log("first: ", error); return NextResponse.json({ error: `'Failed to add variation' + ${error}` }, { status: 500 });}
     return NextResponse.json(data);
 }
 

@@ -1,10 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import ReactQuill from "react-quill"; // Import React Quill
+// import ReactQuill from "react-quill"; // Import React Quill
 import "react-quill/dist/quill.snow.css"; // Import Quill styles
 import Select from "react-select";
 import axios from "axios";
 import { supabase } from "./createClient";
+import dynamic from "next/dynamic";
+
+const ReactQuill = dynamic(() => import("react-quill"), {
+	ssr: false,
+});
 
 const cloudinaryUploadUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
 const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
@@ -38,10 +43,13 @@ const ProductForm = ({ user }) => {
 	});
 
 	console.log(product);
-
+	
 	const [images, setImages] = useState([]);
+	console.log(images)
 	const [attributes, setAttributes] = useState([]);
+	console.log(attributes);
 	const [variations, setVariations] = useState([]);
+	console.log(variations);
 	const [categories, setCategories] = useState([]);
 	const [isSlugEdited, setIsSlugEdited] = useState(false);
 
@@ -238,19 +246,13 @@ const ProductForm = ({ user }) => {
 			}
 		}
 
-		setProduct((prev) => ({
-			...prev,
-			images: [...prev.images, ...uploadedImages],
-		}));
+		setImages((prevImages) => [...prevImages, ...uploadedImages]); // Update as a flat array
 	};
 
 	// Handle image delete
 	const handleImageDelete = (index) => {
-		const newImages = product.images.filter((_, i) => i !== index);
-		setProduct((prev) => ({
-			...prev,
-			images: newImages,
-		}));
+		const newImages = images.filter((_, i) => i !== index); // Use images state instead of product.images
+		setImages(newImages);
 	};
 
 	// const handleSubmit = async (e) => {
@@ -282,24 +284,24 @@ const ProductForm = ({ user }) => {
 	// 				"Content-Type": "application/json",
 	// 			},
 	// 		});
-  //     if (responseProduct.status === 200) {
-  //       var id = responseProduct.data[0].id
-  //       console.log(variations)
-  //       for (var i = 0; i < variations.length; i++) {
-  //       const id = responseProduct.data[0].id
-  //       const responseVariation = await axios.post(`/api/products/${id}/variations`, {id, variations[i]}, {
-  //       headers: {
+	//     if (responseProduct.status === 200) {
+	//       var id = responseProduct.data[0].id
+	//       console.log(variations)
+	//       for (var i = 0; i < variations.length; i++) {
+	//       const id = responseProduct.data[0].id
+	//       const responseVariation = await axios.post(`/api/products/${id}/variations`, {id, variations[i]}, {
+	//       headers: {
 	// 				Authorization: `Bearer ${data.api}`, // Attach the API key as a Bearer token
 	// 				"Content-Type": "application/json",
 	// 			},
 	// 		})};
-  //     if (responseVariation.status === 200) {
+	//     if (responseVariation.status === 200) {
 	// 			console.log("Product saved successfully", responseVariation.data);
 	// 			// Optionally, reset the form or navigate to another page
 	// 		} else {
 	// 			console.error("Error saving product", responseVariation.data);
 	// 		}
-  //   }
+	//   }
 
 	// 		// if (responseProduct.status === 200) {
 	// 		// 	console.log("Product saved successfully", responseProduct.data);
@@ -312,7 +314,7 @@ const ProductForm = ({ user }) => {
 	// 	}
 	// };
 
-  const handleSubmit = async (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
 
 		try {
@@ -342,10 +344,47 @@ const ProductForm = ({ user }) => {
 				const productId = responseProduct.data[0].id; // Get the product ID from the response
 				console.log("Product saved successfully", responseProduct.data);
 
+				// Loop through the image and send them to the API
+				for (let i = 0; i < images.length; i++) {
+					const image = {
+						image_url: images[i],
+						product_id: productId, // Add the product ID
+					};
+					console.log(image);
+
+					const responseImage = await axios.post(
+						`/api/products/${productId}/images`,
+						image, // Send the image with the product ID
+						{
+							headers: {
+								Authorization: `Bearer ${apiKey}`, // Attach the API key again
+								"Content-Type": "application/json",
+							},
+						}
+					);
+					// Check if the image was successfully saved
+					if (responseImage.status === 200) {
+						console.log("Images saved successfully", responseImage.data);
+					} else {
+						console.error("Error saving variation", responseImage.data);
+					}
+				}
 				// Loop through the variations and send them to the API
 				for (let i = 0; i < variations.length; i++) {
-					let variation = { ...variations[i], product_id: productId }; // Add the product ID to the variation
-          console.log(variation)
+					let variation = {
+						...variations[i],
+						price:
+							variations[i].price == ""
+								? product.price
+								: parseFloat(variations[i].price), // Convert price to a number
+						sale_price:
+							variations[i].sale_price == ""
+								? product.sale_price
+								: parseFloat(variations[i].sale_price), // Convert sale_price to a number
+						product_id: productId, // Add the product ID
+						attributes: JSON.stringify(variations[i].attributes), // Ensure attributes are JSON serialized
+					};
+					console.log(variation);
 
 					// Post each variation linked to the product ID
 					const responseVariation = await axios.post(
@@ -373,8 +412,6 @@ const ProductForm = ({ user }) => {
 			console.error("Error submitting form:", error);
 		}
 	};
-
-
 
 	return (
 		<form onSubmit={handleSubmit} className="p-6">
@@ -517,7 +554,7 @@ const ProductForm = ({ user }) => {
 				className="mb-4"
 			/>
 			<div className="grid grid-cols-2 gap-4 mb-4">
-				{images.map((imageUrl, index) => (
+				{images?.map((imageUrl, index) => (
 					<div key={index} className="relative">
 						<img
 							src={imageUrl}
@@ -537,37 +574,6 @@ const ProductForm = ({ user }) => {
 			{product.type == "variable" && (
 				<>
 					<h2 className="text-lg font-semibold mb-2">Attributes</h2>
-					{/* {attributes.map((attr, index) => (
-						<div key={attr.id} className="mb-4">
-							<input
-								type="text"
-								value={attr.name}
-								onChange={(e) =>
-									handleAttributeChange(index, "name", e.target.value)
-								}
-								placeholder="Attribute Name"
-								className="p-2 border border-gray-300 rounded w-full mb-2"
-							/>
-							{attr.options.map((opt, optIndex) => (
-								<input
-									key={optIndex}
-									type="text"
-									value={opt}
-									onChange={(e) =>
-										handleOptionChange(index, optIndex, e.target.value)
-									}
-									placeholder="Option"
-									className="p-2 border border-gray-300 rounded w-full mb-2"
-								/>
-							))}
-							<button
-								type="button"
-								onClick={() => addAttributeOption(index)}
-								className="text-blue-500">
-								Add Option
-							</button>
-						</div>
-					))} */}
 					{attributes.map((attribute, attrIndex) => (
 						<div
 							key={attribute.id}
