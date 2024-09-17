@@ -10,6 +10,7 @@ import {
 	TableRow,
 } from "landing-page-ui";
 import Image from "next/image";
+import DashboardAllProducts from "@/components/DashboardAllProducts";
 
 const Page = () => {
 	const [userData, setUserData] = useState(null);
@@ -100,7 +101,7 @@ const Page = () => {
 										<TableBody>
 											{products.map((product) => (
 												<TableRow key={product.id}>
-													<TableCell><Image src={product.images[1]} width={70} height={100} cover alt={product.name} /></TableCell>
+													<TableCell><Image src={product.images[1]} width={70} height={100} alt={product.name} /></TableCell>
 													<TableCell styles="text-wrap max-w-96">{product.name}</TableCell>
 													<TableCell>{product.type}</TableCell>
 													<TableCell>{product.sku ? product.sku : "-"}</TableCell>
@@ -115,11 +116,8 @@ const Page = () => {
 										</TableBody>
 									</Table>
 									<ul>
-										{products.map((product) => (
-											<li key={product.id}>
-												{product.name}
-												{product.price}
-											</li>
+										{products.map((product,index) => (
+											<DashboardAllProducts product={product} key={index} />
 										))}
 									</ul>
 								</>
