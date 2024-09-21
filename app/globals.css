@@ -2,3 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'BespokeSans-Regular';
+  src: url('./fonts/BespokeSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Expose-Bold';
+  src: url('./fonts/Expose-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+@layer base {
+  html {
+  --color-primary-bg: #14152a;
+  --color-secondary-bg: #24273a;
+  --color-primary: #88acbc;
+  --color-secondary: #ebdbd1;
+  --color-buttons: #fbbc05;
+  --color-typography: #D9DBE9;
+  }
+  @import "../themes/dark.css";
+  @import "../themes/light.css";
+}

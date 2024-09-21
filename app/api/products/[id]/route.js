@@ -224,75 +224,76 @@ console.log(params)
 	}
 
 	// Handle variations: First, delete existing variations, then insert updated ones
-	const { error: variationsDeleteError } = await supabase
-		.from("product_variations")
-		.delete()
-		.eq("product_id", productId);
+	// const { error: variationsDeleteError } = await supabase
+	// 	.from("product_variations")
+	// 	.delete()
+	// 	.eq("product_id", productId);
 
-	if (variationsDeleteError) {
-		return NextResponse.json(
-			{ error: "Failed to update variations" },
-			{ status: 500 }
-		);
-	}
+	// if (variationsDeleteError) {
+	// 	return NextResponse.json(
+	// 		{ error: "Failed to update variations" },
+	// 		{ status: 500 }
+	// 	);
+	// }
 
-	if (variations && variations.length > 0) {
-		for (let variation of variations) {
-			const {
-				id,
-				sku,
-				price,
-				sale_price,
-				sale_price_start_date,
-				sale_price_end_date,
-				stock_quantity,
-				attributes,
-			} = variation;
+	// if (variations && variations.length > 0) {
+	// 	for (let variation of variations) {
+	// 		const {
+	// 			id,
+	// 			sku,
+	// 			price,
+	// 			sale_price,
+	// 			sale_price_start_date,
+	// 			sale_price_end_date,
+	// 			stock_quantity,
+	// 			attributes,
+	// 		} = variation;
 
-			// Insert each variation with related attributes
-			const { data: insertedVariation, error: variationInsertError } =
-				await supabase
-					.from("product_variations")
-					.insert({
-						product_id: productId,
-						sku,
-						price,
-						sale_price,
-						sale_price_start_date,
-						sale_price_end_date,
-						stock_quantity,
-					})
-					.select()
-					.single();
+	// 		// Insert each variation with related attributes
+	// 		const { data: insertedVariation, error: variationInsertError } =
+	// 			await supabase
+	// 				.from("product_variations")
+	// 				.insert({
+	// 					product_id: productId,
+	// 					sku,
+	// 					price,
+	// 					sale_price,
+	// 					sale_price_start_date,
+	// 					sale_price_end_date,
+	// 					stock_quantity,
+	// 					attributes
+	// 				})
+	// 				.select()
+	// 				.single();
 
-			if (variationInsertError || !insertedVariation) {
-				return NextResponse.json(
-					{ error: "Failed to insert variations" },
-					{ status: 500 }
-				);
-			}
+	// 		if (variationInsertError || !insertedVariation) {
+	// 			return NextResponse.json(
+	// 				{ error: "Failed to insert variations" },
+	// 				{ status: 500 }
+	// 			);
+	// 		}
 
-			// Insert related variation attributes
-			if (attributes && attributes.length > 0) {
-				const attributeData = attributes.map((attribute) => ({
-					variation_id: insertedVariation.id,
-					attribute_id: attribute.attribute_id,
-					option_value: attribute.option_value,
-				}));
+	// 		// Insert related variation attributes
+	// 		if (attributes && attributes.length > 0) {
+	// 			const attributeData = attributes.map((attribute) => ({
+	// 				variation_id: insertedVariation.id,
+	// 				attribute_id: attribute.attribute_id,
+	// 				option_value: attribute.option_value,
+	// 			}));
 
-				const { error: attributesInsertError } = await supabase
-					.from("variation_attributes")
-					.insert(attributeData);
+	// 			const { error: attributesInsertError } = await supabase
+	// 				.from("variation_attributes")
+	// 				.insert(attributeData);
 
-				if (attributesInsertError) {
-					return NextResponse.json(
-						{ error: "Failed to insert variation attributes" },
-						{ status: 500 }
-					);
-				}
-			}
-		}
-	}
+	// 			if (attributesInsertError) {
+	// 				return NextResponse.json(
+	// 					{ error: "Failed to insert variation attributes" },
+	// 					{ status: 500 }
+	// 				);
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// Return success response
 	return NextResponse.json({ message: "Product updated successfully" });

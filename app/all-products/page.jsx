@@ -86,38 +86,13 @@ const Page = () => {
 							{/* Render products here */}
 							{products.length ? (
 								<>
-									<Table variant="2">
-										<TableHead>
-											<TableRow>
-												<TableCell header={true}>Image</TableCell>
-												<TableCell header={true}>Name</TableCell>
-												<TableCell header={true}>Type</TableCell>
-												<TableCell header={true}>Sku</TableCell>
-												<TableCell header={true}>Price</TableCell>
-												<TableCell header={true}>Sale Price</TableCell>
-												<TableCell header={true}>Actions</TableCell>
-											</TableRow>
-										</TableHead>
-										<TableBody>
-											{products.map((product) => (
-												<TableRow key={product.id}>
-													<TableCell><Image src={product.images[1]} width={70} height={100} alt={product.name} /></TableCell>
-													<TableCell styles="text-wrap max-w-96">{product.name}</TableCell>
-													<TableCell>{product.type}</TableCell>
-													<TableCell>{product.sku ? product.sku : "-"}</TableCell>
-													<TableCell>{product.price}</TableCell>
-													<TableCell>{product.sale_price}</TableCell>
-													<TableCell>
-														<a href={`/product/edit/${product.id}`}>Edit</a>
-														<a href="#">Delete</a>
-													</TableCell>
-												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-									<ul>
-										{products.map((product,index) => (
-											<DashboardAllProducts product={product} key={index} />
+									<ul className="bg-secondary-bg rounded-md shadow-sm">
+										{products.map((product, index) => (
+											<DashboardAllProducts
+												product={product}
+												userData={userData}
+												key={index}
+											/>
 										))}
 									</ul>
 								</>

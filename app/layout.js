@@ -20,12 +20,20 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang="en">
+		<html lang="en" data-theme="dark" >
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+				className={`${geistSans.variable} ${geistMono.variable} bg-primary-bg text-typography antialiased`}>
 				<Auth>{children}</Auth>
 			</body>
 		</html>
 	);
 }
+
+
+
+
+
+
+
+
 

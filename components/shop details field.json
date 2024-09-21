@@ -1,0 +1,183 @@
+{
+  "id": 1,
+  "name": "Tech Gear Store",
+  "owner_id": 101,
+  "slug": "tech-gear-store",
+  "description": "Specializing in the latest gadgets and electronics.",
+  "email": "contact@techgearstore.com",
+  "phone": "+1-234-567-890",
+  "website": "https://www.techgearstore.com",
+  "address": {
+    "street": "123 Main Street",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "USA",
+    "postal_code": "94105"
+  },
+  "social_links": [
+    {
+      "platform": "Facebook",
+      "url": "https://facebook.com/techgearstore"
+    },
+    {
+      "platform": "Instagram",
+      "url": "https://instagram.com/techgearstore"
+    }
+  ],
+  "business_registration_number": "BRN123456789",
+  "tax_id": "TAX987654321",
+  "currency": "USD",
+  "operating_hours": {
+    "days": "Monday - Friday",
+    "open_time": "09:00 AM",
+    "close_time": "06:00 PM"
+  },
+  "shipping_policy": "Free shipping for orders over $100.",
+  "return_policy": "30-day return policy for unused items.",
+  "status": "active",
+  "rating": 4.7,
+  "reviews_count": 120,
+  "vendor_since": "2022-05-15",
+  "total_products": 150,
+  "total_stock": 1200,
+  "low_stock_threshold": 10,
+  "preferred_warehouse": "Warehouse 1",
+  "bank_account_number": "987654321",
+  "bank_name": "ABC Bank",
+  "payment_gateway": "PayPal",
+  "payout_frequency": "monthly",
+  "commission_rate": 10,
+  "transaction_fee": 0.30,
+  "subscription_plan": "Gold",
+  "permissions": [
+    "manage_products",
+    "view_sales_reports"
+  ],
+  "staff_users": [
+    {
+      "user_id": 102,
+      "role": "admin"
+    },
+    {
+      "user_id": 103,
+      "role": "manager"
+    }
+  ],
+  "total_sales": 50000,
+  "total_orders": 200,
+  "refunds_count": 5,
+  "net_revenue": 45000,
+  "logo_url": "https://res.cloudinary.com/techgearstore/logo.png",
+  "featured": true,
+  "tags": [
+    "electronics",
+    "gadgets",
+    "tech"
+  ],
+  "api_key": ""
+}
+
+
+
+first i have a database where i need some changes
+1. this is my user table
+id	
+bigint number	 
+created_at	
+timestamp with time zone string	 
+first_name	
+text string	 
+last_name	
+text string	 
+user_name	 text string	 
+email	
+text string	 
+password	
+text string	 
+api	
+text string
+
+not need to change
+use the email for creating the shop
+
+2. create the shop table
+
+{
+  "id": 1,
+  "name": "Tech Gear Store",
+  "owner_id": 101, //user id
+  "slug": "tech-gear-store",
+  "description": "Specializing in the latest gadgets and electronics.",
+  "email": "contact@techgearstore.com",
+  "phone": "+1-234-567-890",
+  "website": "https://www.techgearstore.com",
+  "address": {
+    "street": "123 Main Street",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "USA",
+    "postal_code": "94105"
+  },
+  "social_links": [
+    {
+      "platform": "Facebook",
+      "url": "https://facebook.com/techgearstore"
+    },
+    {
+      "platform": "Instagram",
+      "url": "https://instagram.com/techgearstore"
+    }
+  ],
+  "business_registration_number": "BRN123456789",
+  "tax_id": "TAX987654321",
+  "currency": "USD",
+  "operating_hours": {
+    "days": "Monday - Friday",
+    "open_time": "09:00 AM",
+    "close_time": "06:00 PM"
+  },
+  "shipping_policy": "Free shipping for orders over $100.",
+  "return_policy": "30-day return policy for unused items.",
+  "status": "active",
+  // "rating": 4.7,
+  // "reviews_count": 120,
+  // "vendor_since": "2022-05-15",
+  // "total_products": 150,
+  // "total_stock": 1200,
+  // "low_stock_threshold": 10,
+  // "preferred_warehouse": "Warehouse 1",
+  "bank_account_number": "987654321",
+  "bank_name": "ABC Bank",
+  "payment_gateway": "PayPal",
+  "payout_frequency": "monthly",
+  "commission_rate": 10,
+  "transaction_fee": 0.30,
+  "subscription_plan": "Gold",
+  "permissions": [
+    "manage_products",
+    "view_sales_reports"
+  ],
+  "staff_users": [
+    {
+      "user_id": 102, //user email
+      "role": "admin"
+    },
+    {
+      "user_id": 103, //user email
+      "role": "manager"
+    }
+  ],
+  "total_sales": 50000,
+  "total_orders": 200,
+  "refunds_count": 5,
+  "net_revenue": 45000,
+  "logo_url": "https://res.cloudinary.com/techgearstore/logo.png",
+  "featured": true,
+  "tags": [
+    "electronics",
+    "gadgets",
+    "tech"
+  ]
+}
+
+3.

@@ -34,6 +34,46 @@ const EditProductForm = ({ params }) => {
 		images: [],
 		variations: [],
 	});
+
+	const [attributes, setAttributes] = useState([]); // Moved out of the block
+
+	useEffect(() => {
+		// Only run this if the product type is 'variable' and variations exist
+		if (product.type === "variable" && product.variations.length > 0) {
+			// Initialize an empty result object
+			let groupedAttributes = {};
+
+			// Iterate over the variations
+			product.variations.forEach((variation) => {
+				variation.attributes.forEach((attribute) => {
+					const { name, option } = attribute;
+
+					// If the attribute name is not yet in the result, initialize it
+					if (!groupedAttributes[name]) {
+						groupedAttributes[name] = new Set();
+					}
+
+					// Add the option to the attribute set (sets only allow unique values)
+					groupedAttributes[name].add(option);
+				});
+			});
+
+			// Convert the groupedAttributes object to the desired array format and update the state
+			const formattedAttributes = Object.keys(groupedAttributes).map(
+				(name) => ({
+					name,
+					options: Array.from(groupedAttributes[name]), // Convert Set to Array
+				})
+			);
+
+			// Update attributes state
+			setAttributes(formattedAttributes);
+		} else {
+			// Reset attributes if not a variable product
+			setAttributes([]);
+		}
+	}, [product.type, product.variations]); // Trigger effect when product type or variations change
+
 	console.log(product);
 	const router = useRouter();
 	const { id } = params; // Corrected the param destructuring
@@ -169,43 +209,43 @@ const EditProductForm = ({ params }) => {
 
 	// Handle adding a new attribute
 	const addAttribute = () => {
-		setProduct([...product.attributes, { name: "", options: [] }]);
+		setAttributes([...attributes, { name: "", options: [] }]);
 	};
 
 	// Handle deleting an attribute
 	const deleteAttribute = (index) => {
-		const newAttributes = product.attributes.filter((_, i) => i !== index);
-		setProduct(newAttributes);
+		const newAttributes = attributes.filter((_, i) => i !== index);
+		setAttributes(newAttributes);
 	};
 
 	// Handle adding a new option to an attribute
 	const addAttributeOption = (attrIndex) => {
-		const newAttributes = [...product.attributes];
+		const newAttributes = [...attributes];
 		newAttributes[attrIndex].options.push("");
-		setProduct(newAttributes);
+		setAttributes(newAttributes);
 	};
 
 	// Handle deleting an option from an attribute
 	const deleteAttributeOption = (attrIndex, optIndex) => {
 		const newAttributes = [...product.attributes];
 		newAttributes[attrIndex].options.splice(optIndex, 1);
-		setProduct(newAttributes);
+		setAttributes(newAttributes);
 	};
 
 	// Handle attribute change
 	const handleAttributeChange = (attrIndex, field, value) => {
-		const newAttributes = [...product.attributes];
+		const newAttributes = [...attributes];
 		if (field === "name") {
 			newAttributes[attrIndex].name = value;
 		}
-		setProduct(newAttributes);
+		setAttributes(newAttributes);
 	};
 
 	// Handle option change for an attribute
 	const handleOptionChange = (attrIndex, optIndex, value) => {
-		const newAttributes = [...product.attributes];
+		const newAttributes = [...attributes];
 		newAttributes[attrIndex].options[optIndex] = value;
-		setProduct(newAttributes);
+		setAttributes(newAttributes);
 	};
 
 	// Handle adding a manual variation
@@ -219,7 +259,7 @@ const EditProductForm = ({ params }) => {
 				sale_price_start_date: new Date(), // Add sale start date
 				sale_price_end_date: new Date(), // Add sale end date
 				stock_quantity: 0,
-				attributes: product.attributes.map((attr) => ({
+				attributes: attributes.map((attr) => ({
 					name: attr.name,
 					option: "",
 				})),
@@ -293,32 +333,6 @@ const EditProductForm = ({ params }) => {
 		}));
 	};
 
-	// Initialize an empty result object
-	var groupedAttributes = {};
-	var attributes = []
-if(product.type === 'variable') {
-	// Iterate over the variations
-	product.variations.forEach((variation) => {
-		variation.attributes.forEach((attribute) => {
-			const { name, option } = attribute;
-
-			// If the attribute name is not yet in the result, initialize it
-			if (!groupedAttributes[name]) {
-				groupedAttributes[name] = new Set();
-			}
-
-			// Add the option to the attribute set (sets only allow unique values)
-			groupedAttributes[name].add(option);
-		});
-	});
-
-	// Convert the groupedAttributes object to the desired array format
-	attributes = Object.keys(groupedAttributes).map((name) => ({
-		name,
-		options: Array.from(groupedAttributes[name]),
-	}));
-}
-console.log(attributes)
 	// Handle variation changes
 	const handleVariationChange = (index, field, value) => {
 		const updatedVariations = [...product.variations];
@@ -374,7 +388,6 @@ console.log(attributes)
 
 	return (
 		<form onSubmit={handleSubmit}>
-			
 			<div>
 				<label>Name:</label>
 				<input
@@ -490,7 +503,7 @@ console.log(attributes)
 					isMulti
 					options={categories}
 					value={categories.filter((category) =>
-						product.categories.includes(category.value.toString())
+						product?.categories?.includes(category.value.toString())
 					)}
 					onChange={handleCategoryChange}
 					className="mb-4"
